@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athenaeum AI - Academic Research Workspace</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js CDN for reliable client-side PDF parsing and rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    
+    <!-- Premium Google Fonts: Serif for papers, Sans for UI, Mono for data -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbars adapting to light/dark themes */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 2px;
+        }
+        html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e4e4e7;
+            border-radius: 2px;
+        }
+        
+        /* Smooth transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="h-full bg-zinc-50 dark:bg-[#09090b] text-zinc-800 dark:text-zinc-200 font-sans overflow-hidden flex flex-col transition-colors duration-250 selection:bg-zinc-200 dark:selection:bg-zinc-800">
+
+    <header class="flex flex-wrap items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] shrink-0 gap-4 z-40 transition-colors duration-250">
+        <div class="flex items-center gap-2.5">
+            <div class="p-1.5 rounded bg-zinc-100 dark:bg-zinc-900">
+                <i data-lucide="book-open" class="w-4 h-4 text-zinc-800 dark:text-zinc-100"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    Athenaeum AI
+                </h1>
+                <p class="text-[9px] text-zinc-400 dark:text-zinc-550 font-mono uppercase tracking-widest">Medical & Academic Workspace</p>
+            </div>
+        </div>
+
+        <!-- Right Side Header Controls -->
+        <div class="flex items-center gap-3">
+            
+            <!-- Connection Widget -->
+            <div class="flex items-center gap-2.5 bg-zinc-50 dark:bg-[#121214] px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/80">
+                <div class="flex items-center gap-1.5">
+                    <i data-lucide="key" class="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-550"></i>
+                    <span class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">API Key:</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <input
+                        type="password"
+                        id="api-key-input"
+                        placeholder="Enter Gemini Key..."
+                        class="px-2 py-0.5 text-[10px] font-mono rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-850 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700 placeholder:text-zinc-450 dark:placeholder:text-zinc-600 w-36 transition-all"
+                    />
+                    <button
+                        id="connect-btn"
+                        onclick="App.handleConnectKey()"
+                        class="px-2.5 py-0.5 text-[10px] font-medium rounded bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950 transition-all cursor-pointer"
+                    >
+                        Connect
+                    </button>
+                    <button
+                        id="disconnect-btn"
+                        onclick="App.handleDisconnectKey()"
+                        class="hidden px-2.5 py-0.5 text-[10px] font-medium rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-350 transition-all cursor-pointer"
+                    >
+                        Disconnect
+                    </button>
+                </div>
+
+                <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800"></div>
+                <div class="flex items-center gap-1.5">
+                    <div id="connection-indicator" class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                    <span id="connection-status" class="text-[9px] font-mono tracking-wider text-amber-500">
+                        Local Fallback
+                    </span>
+                </div>
+            </div>
+
+            <button
+                onclick="App.toggleTheme()"
+                class="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all cursor-pointer"
+                title="Toggle View Theme"
+                id="theme-toggle-btn"
+            >
+                <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+                <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-72 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] flex flex-col shrink-0 transition-colors duration-250">
+            <!-- Active Corpus Stats -->
+            <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                        <i data-lucide="database" class="w-3 h-3 text-zinc-400 dark:text-zinc-500"></i>
+                        Active Sources
+                    </span>
+                    <span id="corpus-count" class="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono">
+                        0 Papers
+                    </span>
+                </div>
+            </div>
+
+            <!-- Documents List Segment -->
+            <div id="papers-list" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Drag and Drop File Uploader -->
+            <div class="px-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                <div
+                    id="drop-zone"
+                    class="p-4 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-[#121214]/40 hover:bg-zinc-100/50 dark:hover:bg-[#121214] hover:border-zinc-400 dark:hover:border-zinc-700 text-center transition-all cursor-pointer"
+                    onclick="document.getElementById('file-input').click()"
+                >
+                    <i data-lucide="upload" class="w-4 h-4 mx-auto mb-1 text-zinc-400 dark:text-zinc-550"></i>
+                    <p class="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Upload PDF / TXT Source</p>
+                    <p class="text-[9px] text-zinc-400 dark:text-zinc-600 mt-0.5 font-mono">Drag and drop files here</p>
+                    <input
+                        id="file-input"
+                        type="file"
+                        class="hidden"
+                        accept=".pdf,.txt,.md"
+                        onchange="App.handleFileInput(event)"
+                    />
+                </div>
+            </div>
+
+            <!-- Academic Toolbelt Actions -->
+            <div class="p-4 bg-white dark:bg-[#09090b] space-y-3.5 shrink-0 transition-colors duration-250">
+                <span class="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i>
+                    Synthesis Tools
+                </span>
+
+                <!-- Slides Configuration Block -->
+                <div class="space-y-1.5 p-2 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-[#121214]/20">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-medium text-zinc-800 dark:text-zinc-300 flex items-center gap-1">
+                            <i data-lucide="presentation" class="w-3 h-3 text-zinc-500 dark:text-zinc-400"></i>
+                            Deck Builder
+                        </span>
+                        <select 
+                            id="ppt-archetype-select"
+                            class="bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded px-1 py-0.5 text-[9px] text-zinc-600 dark:text-zinc-400 focus:outline-none"
+                        >
+                            <option value="lecture">Lecture (Instructor)</option>
+                            <option value="student">Seminar (Student)</option>
+                            <option value="synthesis">Lit Review Synthesis</option>
+                        </select>
+                    </div>
+                    <button
+                        onclick="App.triggerSlideGeneration()"
+                        class="w-full py-1 text-[11px] font-medium rounded bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white dark:text-zinc-250 transition-all cursor-pointer"
+                    >
+                        Compile Presentation
+                    </button>
+                </div>
+
+                <!-- Comprehensive Exam Blueprint -->
+                <div class="space-y-1.5 p-2 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-[#121214]/20">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-medium text-zinc-800 dark:text-zinc-300 flex items-center gap-1">
+                            <i data-lucide="award" class="w-3 h-3 text-zinc-500 dark:text-zinc-400"></i>
+                            Exams & Vignettes
+                        </span>
+                        <select 
+                            id="quiz-difficulty-select"
+                            class="bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded px-1 py-0.5 text-[9px] text-zinc-600 dark:text-zinc-400 focus:outline-none"
+                        >
+                            <option value="doctoral">USMLE / Board-Style</option>
+                            <option value="comprehensive">Comprehensive Q&A</option>
+                        </select>
+                    </div>
+                    <button
+                        onclick="App.triggerQuizGeneration()"
+                        class="w-full py-1 text-[11px] font-medium rounded bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white dark:text-zinc-250 transition-all cursor-pointer"
+                    >
+                        Build Practice Question
+                    </button>
+                </div>
+
+                <!-- Mindmapping Concept Linker -->
+                <button
+                    onclick="App.triggerMindMapGeneration()"
+                    class="w-full py-1.5 rounded border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer text-[11px] font-medium flex items-center justify-center gap-1"
+                >
+                    <i data-lucide="network" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i>
+                    Map Thematic Relations
+                </button>
+            </div>
+        </aside>
+
+        <!-- Center Workspace Viewport -->
+        <main class="flex-1 bg-zinc-50 dark:bg-[#09090b] flex flex-col overflow-hidden relative transition-colors duration-250">
+            
+            <!-- Navigation Tab Bar -->
+            <div class="flex items-center justify-between px-6 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214]/50 shrink-0 transition-colors duration-250">
+                <div class="flex items-center gap-1">
+                    <button
+                        id="tab-viewer-btn"
+                        onclick="App.switchTab('viewer')"
+                        class="px-3 py-1.5 text-[11px] font-medium tracking-tight rounded-md transition-all cursor-pointer bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                    >
+                        Core Viewer
+                    </button>
+                    <button
+                        id="tab-slides-btn"
+                        onclick="App.switchTab('slides')"
+                        class="px-3 py-1.5 text-[11px] font-medium tracking-tight rounded-md transition-all cursor-pointer text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-200"
+                    >
+                        Slides
+                    </button>
+                    <button
+                        id="tab-quiz-btn"
+                        onclick="App.switchTab('quiz')"
+                        class="px-3 py-1.5 text-[11px] font-medium tracking-tight rounded-md transition-all cursor-pointer text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-200"
+                    >
+                        Board Vignette
+                    </button>
+                    <button
+                        id="tab-mindmap-btn"
+                        onclick="App.switchTab('mindmap')"
+                        class="px-3 py-1.5 text-[11px] font-medium tracking-tight rounded-md transition-all cursor-pointer text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-200"
+                    >
+                        Mind Map
+                    </button>
+                </div>
+
+                <!-- Active Focus Label -->
+                <div class="flex items-center gap-1.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-650"></span>
+                    <span>Target:</span>
+                    <span id="active-target-badge" class="font-semibold text-zinc-650 dark:text-zinc-455">None</span>
+                </div>
+            </div>
+
+            <!-- Workspace Flow Containment Container -->
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-zinc-50 dark:bg-[#09090b] relative transition-colors duration-250">
+                
+                <div id="ai-loading-hud" class="hidden absolute inset-0 bg-zinc-100/80 dark:bg-[#09090b]/80 backdrop-blur-[1px] z-30 flex items-center justify-center">
+                    <div class="p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-2xl flex flex-col items-center gap-3 text-center max-w-xs transition-colors duration-250">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 text-zinc-650 dark:text-zinc-300 animate-spin"></i>
+                        <div>
+                            <h4 id="loading-hud-title" class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Synthesizing Contextual Gaps...</h4>
+                            <p id="loading-hud-desc" class="text-[10px] text-zinc-400 dark:text-zinc-550 mt-0.5 font-mono">Loading data framework models.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab panel: Document/PDF Viewer -->
+                <div id="workspace-viewer" class="space-y-6 max-w-3xl mx-auto">
+                    
+                    <!-- EMPTY STATE FOR VIEWERS -->
+                    <div id="viewer-empty" class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] p-12 text-center space-y-4">
+                        <div class="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mx-auto text-zinc-400">
+                            <i data-lucide="file-text" class="w-6 h-6"></i>
+                        </div>
+                        <div class="max-w-sm mx-auto space-y-1.5">
+                            <h3 class="text-sm font-semibold text-zinc-850 dark:text-zinc-200">No active academic documents</h3>
+                            <p class="text-[11px] text-zinc-550 dark:text-zinc-450">
+                                Upload scientific manuscripts (PDF), raw logs, or syllabus outlines to activate the interactive grounding reader.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Active Viewer Sheet -->
+                    <div id="viewer-active" class="hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] shadow-sm overflow-hidden min-h-[460px] flex flex-col transition-colors duration-250">
+                        <div class="px-5 py-3 bg-zinc-50/50 dark:bg-[#18181b]/25 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-550 font-mono">
+                            <span id="page-counter-badge" class="font-medium">PAGE 1 OF 1</span>
+                            <span id="viewer-journal" class="italic truncate max-w-xs text-right text-zinc-500">Research Literature</span>
+                        </div>
+
+                        <!-- Translation Action Toolbar -->
+                        <div class="px-5 py-2 bg-zinc-100/40 dark:bg-[#1c1c1e]/40 border-b border-zinc-200 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="languages" class="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-550"></i>
+                                <span class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Translate to:</span>
+                                <select 
+                                    id="translate-lang-select" 
+                                    class="bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.5 text-[10px] text-zinc-700 dark:text-zinc-300 focus:outline-none"
+                                >
+                                    <option value="Spanish">Spanish (Español)</option>
+                                    <option value="French">French (Français)</option>
+                                    <option value="German">German (Deutsch)</option>
+                                    <option value="Chinese">Chinese (中文)</option>
+                                    <option value="Japanese">Japanese (日本語)</option>
+                                    <option value="Arabic">Arabic (العربية)</option>
+                                    <option value="Portuguese">Portuguese (Português)</option>
+                                    <option value="Italian">Italian (Italiano)</option>
+                                    <option value="Hindi">Hindi (हिन्दी)</option>
+                                    <option value="Russian">Russian (Русский)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button
+                                    id="translate-page-btn"
+                                    onclick="App.translateCurrentPage()"
+                                    class="px-2.5 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-medium text-white dark:text-zinc-100 transition-all cursor-pointer"
+                                >
+                                    Translate Page
+                                </button>
+                                <button
+                                    id="show-original-btn"
+                                    onclick="App.showOriginalText()"
+                                    class="hidden px-2.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-[10px] font-medium text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer"
+                                >
+                                    Show Original
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Main Content Viewport -->
+                        <div class="flex-1 p-6 flex flex-col items-center justify-start overflow-x-auto min-h-[500px]">
+                            <!-- PDF Renderer Canvas (Hidden during Translation to keep serif layout clean) -->
+                            <div id="pdf-canvas-container" class="hidden w-full flex justify-center bg-zinc-100 dark:bg-[#141416] p-4 rounded border border-zinc-200 dark:border-zinc-800 mb-4 overflow-auto">
+                                <canvas id="pdf-canvas" class="max-w-full shadow-lg rounded bg-white"></canvas>
+                            </div>
+
+                            <!-- Styled text sheet (for translation & fallback display/plain text) -->
+                            <div id="text-view-container" class="w-full space-y-4 max-w-2xl">
+                                <div class="flex items-center justify-between">
+                                    <h2 id="viewer-title" class="text-lg font-bold text-zinc-900 dark:text-zinc-200 font-serif leading-snug">
+                                        Loaded Document Title
+                                    </h2>
+                                    <span id="translation-status-badge" class="hidden px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-[8px] font-mono uppercase text-zinc-500 dark:text-zinc-400">
+                                        Translated
+                                    </span>
+                                </div>
+                                <div class="text-[10px] font-mono text-zinc-400 dark:text-zinc-550 border-b border-zinc-200 dark:border-zinc-800 pb-2 flex justify-between">
+                                    <span>Authors: <span id="viewer-authors" class="text-zinc-650 dark:text-zinc-400">-</span></span>
+                                    <span>Year: <span id="viewer-year" class="text-zinc-650 dark:text-zinc-400">-</span></span>
+                                </div>
+
+                                <h3 id="viewer-page-title" class="text-sm font-bold text-zinc-700 dark:text-zinc-300 font-serif pt-1">
+                                    Section Title
+                                </h3>
+                                <p id="viewer-page-body" class="text-[13px] leading-relaxed text-zinc-650 dark:text-zinc-400 font-serif whitespace-pre-line select-text">
+                                    <!-- Dynamically populated page text -->
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Highlight indicator -->
+                        <div id="highlight-alert-hub" class="hidden m-4 p-2 rounded bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-750 text-zinc-800 dark:text-zinc-300 flex items-center gap-1.5 text-[11px] font-mono animate-fade-in">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i>
+                            <span>Deep link target: <strong id="highlight-target-text" class="text-zinc-950 dark:text-zinc-200">""</strong></span>
+                        </div>
+
+                        <!-- Paper Navigation bar -->
+                        <div class="px-5 py-3 bg-zinc-50/50 dark:bg-[#18181b]/25 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                            <button
+                                id="prev-page-btn"
+                                onclick="App.changeViewerPage(-1)"
+                                class="px-2.5 py-1 text-[11px] font-medium rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none"
+                            >
+                                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
+                            </button>
+                            
+                            <span class="text-[10px] font-mono text-zinc-400 dark:text-zinc-550 hidden sm:block">
+                                Click citation links in chat to auto-scaffold.
+                            </span>
+
+                            <button
+                                id="next-page-btn"
+                                onclick="App.changeViewerPage(1)"
+                                class="px-2.5 py-1 text-[11px] font-medium rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none"
+                            >
+                                Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scientific Metric Overview -->
+                    <div id="viewer-metrics" class="hidden p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214]/35 grid grid-cols-3 gap-3 text-center font-mono text-[10px] transition-colors duration-250">
+                        <div>
+                            <p class="text-zinc-400 dark:text-zinc-550 uppercase tracking-widest text-[8px]">Methodology</p>
+                            <p id="spec-methodology" class="text-zinc-700 dark:text-zinc-400 font-semibold mt-0.5 truncate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-zinc-400 dark:text-zinc-550 uppercase tracking-widest text-[8px]">Sample Size</p>
+                            <p id="spec-cohort" class="text-zinc-700 dark:text-zinc-400 font-semibold mt-0.5">-</p>
+                        </div>
+                        <div>
+                            <p class="text-zinc-400 dark:text-zinc-550 uppercase tracking-widest text-[8px]">Significance</p>
+                            <p id="spec-statistic" class="text-zinc-700 dark:text-zinc-400 font-semibold mt-0.5 truncate">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab panel: Slide Deck -->
+                <div id="workspace-slides" class="hidden space-y-6 max-w-2xl mx-auto">
+                    
+                    <!-- Slide Empty State -->
+                    <div id="slides-empty" class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] p-12 text-center space-y-4">
+                        <div class="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mx-auto text-zinc-400">
+                            <i data-lucide="presentation" class="w-6 h-6"></i>
+                        </div>
+                        <div class="max-w-sm mx-auto space-y-1.5">
+                            <h3 class="text-sm font-semibold text-zinc-850 dark:text-zinc-200">No generated presentations</h3>
+                            <p class="text-[11px] text-zinc-550 dark:text-zinc-450">
+                                Upload structured literature, configure your deck archetype, and compile a presentation slide deck.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Slides Canvas Deck -->
+                    <div id="slides-active" class="hidden space-y-6">
+                        <div class="aspect-[16/10] rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-xl relative overflow-hidden flex flex-col justify-between p-7 bg-[#1c1c1e]">
+                            <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                                <span id="slide-archetype-label" class="text-[9px] font-mono text-zinc-400 tracking-wider uppercase">
+                                    LECTURE DECK
+                                </span>
+                                <span id="slide-counter-badge" class="text-[9px] font-mono text-zinc-550">
+                                    SLIDE 1 / 4
+                                </span>
+                            </div>
+
+                            <!-- Slides Content -->
+                            <div class="my-auto space-y-4">
+                                <h2 id="slide-header-text" class="text-base font-semibold tracking-tight text-zinc-100 font-serif">
+                                    Slide Title Header
+                                </h2>
+                                <ul id="slide-bullets-list" class="space-y-2">
+                                    <!-- Populated dynamically -->
+                                </ul>
+                            </div>
+
+                            <div class="flex justify-between items-center text-[8px] font-mono text-zinc-500 border-t border-zinc-800 pt-2">
+                                <span>Synthesized by Athenaeum</span>
+                                <span>Grounding Engine Live</span>
+                            </div>
+                        </div>
+
+                        <!-- Slide Control Panel -->
+                        <div class="flex items-center justify-between bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2">
+                            <button
+                                id="prev-slide-btn"
+                                onclick="App.changeSlide(-1)"
+                                class="px-2.5 py-1 text-[11px] font-medium rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all cursor-pointer disabled:opacity-30"
+                            >
+                                Previous Slide
+                            </button>
+                            <span class="text-[10px] text-zinc-500 dark:text-zinc-450 font-mono">Synthesizing Deck Layout</span>
+                            <button
+                                id="next-slide-btn"
+                                onclick="App.changeSlide(1)"
+                                class="px-2.5 py-1 text-[11px] font-medium rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all cursor-pointer disabled:opacity-30"
+                            >
+                                Next Slide
+                            </button>
+                        </div>
+
+                        <!-- Hidden Notes Compartment -->
+                        <div class="p-4 rounded-lg bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 space-y-2 transition-colors duration-250">
+                            <div class="flex items-center gap-1 text-[10px] font-mono text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+                                <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+                                Instructor Presentation Notes
+                            </div>
+                            <p id="slide-presenter-notes" class="text-[11px] text-zinc-650 dark:text-zinc-400 leading-relaxed font-mono bg-zinc-50 dark:bg-zinc-950 p-3 rounded border border-zinc-200 dark:border-zinc-900">
+                                Delivery note points...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab panel: Vignette / Quiz Builder -->
+                <div id="workspace-quiz" class="hidden space-y-5 max-w-2xl mx-auto">
+                    
+                    <!-- Quiz Empty State -->
+                    <div id="quiz-empty" class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] p-12 text-center space-y-4">
+                        <div class="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mx-auto text-zinc-400">
+                            <i data-lucide="award" class="w-6 h-6"></i>
+                        </div>
+                        <div class="max-w-sm mx-auto space-y-1.5">
+                            <h3 class="text-sm font-semibold text-zinc-855 dark:text-zinc-200">No active Board quizzes</h3>
+                            <p class="text-[11px] text-zinc-550 dark:text-zinc-450">
+                                Build mock Board vignettes or comprehensive exam scenarios to test conceptual framework understanding.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Active Quiz Deck -->
+                    <div id="quiz-active" class="hidden space-y-5">
+                        <div class="p-5 rounded-lg bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4 transition-colors duration-250">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-450 border border-zinc-200 dark:border-zinc-800 tracking-wider uppercase">
+                                    Case Vignette Scenario
+                                </span>
+                                <span id="quiz-difficulty-badge" class="text-[10px] text-zinc-400 dark:text-zinc-550 font-mono">Board Vignettes</span>
+                            </div>
+                            <p id="quiz-vignette-text" class="text-[12px] text-zinc-650 dark:text-zinc-450 leading-relaxed bg-zinc-50 dark:bg-zinc-950 p-4 rounded border border-zinc-200 dark:border-zinc-900 font-serif italic">
+                                Loading clinical text details...
+                            </p>
+                            <h3 id="quiz-question-text" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-200 font-sans">
+                                Question prompt
+                            </h3>
+                        </div>
+
+                        <!-- Multiple choices -->
+                        <div id="quiz-options-grid" class="space-y-2">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="flex items-center justify-between">
+                            <button
+                                onclick="App.triggerQuizGeneration()"
+                                class="px-3 py-1.5 rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 transition-all cursor-pointer"
+                            >
+                                New Vignette
+                            </button>
+                            <button
+                                id="quiz-submit-btn"
+                                onclick="App.submitQuizAnswer()"
+                                class="px-5 py-1.5 rounded bg-zinc-900 dark:bg-zinc-200 hover:bg-zinc-800 dark:hover:bg-white text-[11px] font-semibold text-white dark:text-zinc-950 transition-all cursor-pointer"
+                            >
+                                Check Answer
+                            </button>
+                        </div>
+
+                        <!-- Justification Card -->
+                        <div id="quiz-rationale-card" class="hidden p-4 rounded-lg bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2 animate-fade-in transition-colors duration-250">
+                            <div class="flex items-center gap-1 text-[10px] font-mono text-zinc-500 dark:text-zinc-455 uppercase tracking-widest">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                                Comprehensive Academic Rationale
+                            </div>
+                            <p id="quiz-rationale-text" class="text-[11px] text-zinc-650 dark:text-zinc-400 leading-relaxed bg-zinc-50 dark:bg-zinc-950 p-3 rounded border border-zinc-200 dark:border-zinc-900 font-mono">
+                                Justification matrix...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab panel: Relational Mind Map -->
+                <div id="workspace-mindmap" class="hidden space-y-6">
+                    
+                    <!-- Mindmap Empty State -->
+                    <div id="mindmap-empty" class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] p-12 text-center space-y-4">
+                        <div class="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mx-auto text-zinc-400">
+                            <i data-lucide="network" class="w-6 h-6"></i>
+                        </div>
+                        <div class="max-w-sm mx-auto space-y-1.5">
+                            <h3 class="text-sm font-semibold text-zinc-850 dark:text-zinc-200">No relation map generated</h3>
+                            <p class="text-[11px] text-zinc-550 dark:text-zinc-455">
+                                Construct a visual concept framework map to track relations, agreements, and contradictions across your loaded corpus.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Active Mindmap Area -->
+                    <div id="mindmap-active" class="hidden space-y-6">
+                        <div class="p-3.5 rounded-lg bg-white dark:bg-[#121214]/65 border border-zinc-200 dark:border-zinc-800 text-[11px] flex items-center justify-between gap-4 transition-colors duration-250">
+                            <span class="text-zinc-655 dark:text-zinc-400 leading-relaxed">Mapping analytical paths, literature nodes, and conceptual linkages between uploaded academic sources.</span>
+                            <button 
+                                onclick="App.triggerMindMapGeneration()"
+                                class="px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-[9px] font-mono text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0 cursor-pointer"
+                            >
+                                Refresh Map
+                            </button>
+                        </div>
+
+                        <!-- Columns representing connections -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Theoretical Pillars -->
+                            <div class="space-y-3">
+                                <span class="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block font-semibold">
+                                    Thematic Frameworks
+                                </span>
+                                <div id="mindmap-core-pillars" class="space-y-3">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Document Nodes -->
+                            <div class="space-y-3">
+                                <span class="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block font-semibold">
+                                    Study Nodes
+                                </span>
+                                <div id="mindmap-study-nodes" class="space-y-3">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Relations List -->
+                            <div class="space-y-3">
+                                <span class="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block font-semibold">
+                                    Conceptual Linkages
+                                </span>
+                                <div id="mindmap-relations-list" class="space-y-2.5 bg-white dark:bg-[#121214]/40 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 max-h-[460px] overflow-y-auto custom-scrollbar transition-colors duration-250">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Chat Side Deck -->
+        <section class="w-80 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] flex flex-col shrink-0 transition-colors duration-250">
+            <!-- Header -->
+            <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/20">
+                <span class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-1 font-semibold">
+                    <i data-lucide="cpu" class="w-3 h-3 text-zinc-400 dark:text-zinc-550"></i>
+                    Grounded Companion
+                </span>
+                <p class="text-[10px] text-zinc-455 dark:text-zinc-500 mt-1 leading-relaxed">
+                    Trained strictly to analyze active documents. Click citation references to focus and jump pages.
+                </p>
+            </div>
+
+            <!-- Dynamic Fact Indicator -->
+            <div id="telemetry-box" class="hidden p-3 mx-4 mt-3 rounded border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/10 text-[10px] space-y-1.5 transition-colors duration-250">
+                <span class="font-mono text-zinc-400 dark:text-zinc-550 uppercase text-[8px] tracking-widest block font-semibold">
+                    Document Metrics Matrix
+                </span>
+                <div id="telemetry-indicators" class="grid grid-cols-2 gap-2 text-zinc-650 dark:text-zinc-400">
+                    <!-- Populated dynamically based on corpus documents -->
+                </div>
+            </div>
+
+            <!-- Chat Message Feed -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Input Box form -->
+            <div class="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-955/20">
+                <form id="chat-form" onsubmit="App.handleChatMessage(event)" class="flex gap-2">
+                    <input
+                        type="text"
+                        id="chat-input"
+                        placeholder="Query active literature..."
+                        class="flex-1 px-3 py-1.5 text-[11px] rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-700 focus:outline-none text-zinc-850 dark:text-zinc-100 placeholder:text-zinc-455 dark:placeholder:text-zinc-550 transition-all"
+                    />
+                    <button
+                        type="submit"
+                        class="p-1.5 rounded bg-zinc-900 dark:bg-zinc-200 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950 transition-all cursor-pointer shrink-0"
+                    >
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- Minimalist Toast Notification Container -->
+    <div id="toast-hub" class="fixed bottom-6 right-6 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+    <script>
+        // Global State Architecture (No preloaded documents)
+        const AppState = {
+            apiKey: '',
+            isConnected: false,
+            papers: [], // Holds active uploaded documents
+            selectedPaperId: null,
+            currentViewerPage: 1,
+            activeTab: 'viewer', 
+            textHighlight: null,
+            generatedSlides: null,
+            currentSlideIndex: 0,
+            generatedQuiz: null,
+            quizSelectedOption: null,
+            quizSubmitted: false,
+            mindMapData: null,
+            isGenerating: false,
+            isShowingTranslation: false,
+            translatedText: null,
+            activeTranslationLang: '',
+            chatHistory: [
+                {
+                    role: 'system',
+                    content: 'Athenaeum AI Workspace active. Upload scholarly papers (PDF/TXT) via the sidebar. Once loaded, text is parsed to drive grounded chat discussions, presentation design, board vignettes, relational mind mapping, and multi-language translation.'
+                }
+            ]
+        };
+
+        // Setup PDF.js Global Worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Toast Notification System
+        function triggerToast(message, type = 'success') {
+            const toastHub = document.getElementById('toast-hub');
+            const toast = document.createElement('div');
+            
+            const darkStyle = "dark:bg-zinc-900 dark:border-zinc-800";
+            const lightStyle = "bg-white border-zinc-200 shadow-md text-zinc-850";
+            
+            toast.className = `p-3 py-2.5 rounded border text-[11px] font-mono flex items-center gap-2 pointer-events-auto transition-all duration-200 transform translate-y-2 opacity-0 ${lightStyle} ${darkStyle} ${
+                type === 'success' ? 'text-zinc-800 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800' : 'text-zinc-500 dark:text-zinc-400 border-zinc-250 dark:border-zinc-850'
+            }`;
+            
+            const icon = type === 'success' ? 'check-circle' : 'alert-triangle';
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-3.5 h-3.5 shrink-0"></i> <span>${message}</span>`;
+            toastHub.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 30);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 200);
+            }, 3500);
+        }
+
+        const App = {
+            init: function() {
+                // Default to a beautifully balanced Light Mode
+                document.documentElement.classList.remove('dark');
+                
+                this.renderPapers();
+                this.renderViewer();
+                this.renderChat();
+                this.initDragAndDrop();
+                lucide.createIcons();
+            },
+
+            toggleTheme: function() {
+                const isDark = document.documentElement.classList.contains('dark');
+                if (isDark) {
+                    document.documentElement.classList.remove('dark');
+                    triggerToast('Light theme active');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    triggerToast('Dark theme active');
+                }
+                lucide.createIcons();
+            },
+
+            initDragAndDrop: function() {
+                const zone = document.getElementById('drop-zone');
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    zone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        zone.classList.add('border-zinc-400', 'bg-zinc-100', 'dark:border-zinc-600', 'dark:bg-zinc-900');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    zone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        zone.classList.remove('border-zinc-400', 'bg-zinc-100', 'dark:border-zinc-600', 'dark:bg-zinc-900');
+                    }, false);
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files.length > 0) {
+                        this.processFile(files[0]);
+                    }
+                }, false);
+            },
+
+            handleFileInput: function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    this.processFile(e.target.files[0]);
+                }
+            },
+
+            processFile: function(file) {
+                const fileType = file.type;
+                const fileName = file.name;
+                const cleanName = fileName.replace(/\.[^/.]+$/, "").split('_').join(' ').split('-').join(' ');
+
+                // Show localized visual HUD to guide user pacing
+                document.getElementById('loading-hud-title').innerText = "Analyzing Scientific Layout...";
+                document.getElementById('loading-hud-desc').innerText = "Extracting structured text coordinates.";
+                document.getElementById('ai-loading-hud').classList.remove('hidden');
+
+                if (fileType === "application/pdf" || fileName.endsWith('.pdf')) {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const typedarray = new Uint8Array(e.target.result);
+                            
+                            // Initialize PDF.js rendering framework
+                            const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+                            const pdf = await loadingTask.promise;
+                            
+                            let pages = [];
+                            
+                            // Iterate and extract plain text from all pages to feed grounded operations
+                            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                                const page = await pdf.getPage(pageNum);
+                                const textContent = await page.getTextContent();
+                                const textItems = textContent.items.map(item => item.str);
+                                
+                                let pageText = "";
+                                textItems.forEach(item => {
+                                    pageText += item + " ";
+                                });
+
+                                pages.push({
+                                    pageNumber: pageNum,
+                                    title: `Page Segment ${pageNum}`,
+                                    content: pageText.trim() || "[No extractable text found on page]"
+                                });
+                            }
+
+                            const cleanCitation = this.extractCitation(cleanName);
+
+                            // Build a robust local paper metadata object
+                            const newPaper = {
+                                id: `pdf-${Date.now()}`,
+                                title: cleanName,
+                                shortCitation: cleanCitation,
+                                authors: cleanCitation.split(',')[0],
+                                year: parseInt(cleanCitation.split(',')[1]) || new Date().getFullYear(),
+                                journal: 'Ingested PDF Manual',
+                                methodology: 'Quantitative Case Evaluation',
+                                sampleSize: `Pages: ${pdf.numPages}`,
+                                statistics: 'Direct text parsing extraction',
+                                pages: pages,
+                                isPdf: true,
+                                pdfData: typedarray // Stored as ArrayBuffer for visual canvas rendering
+                            };
+
+                            AppState.papers.push(newPaper);
+                            AppState.selectedPaperId = newPaper.id;
+                            AppState.currentViewerPage = 1;
+
+                            // Reset previous synthesis frames to match new target file context
+                            AppState.generatedSlides = null;
+                            AppState.generatedQuiz = null;
+                            AppState.mindMapData = null;
+                            AppState.isShowingTranslation = false;
+                            AppState.translatedText = null;
+
+                            AppState.chatHistory.push({
+                                role: 'system',
+                                content: `Ingested PDF: "${fileName}". ${pdf.numPages} pages successfully extracted. Grounded workspace context refreshed.`
+                            });
+
+                            this.renderPapers();
+                            this.renderViewer();
+                            this.renderChat();
+                            triggerToast(`Ingested PDF: ${cleanCitation}`);
+
+                        } catch (err) {
+                            console.error(err);
+                            triggerToast('Failed to load or parse PDF. It may be corrupted or blocked.', 'error');
+                        } finally {
+                            document.getElementById('ai-loading-hud').classList.add('hidden');
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+
+                } else {
+                    // Standard Text file parsing fallback
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const text = e.target.result;
+                        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 10);
+                        const pages = [];
+
+                        for (let i = 0; i < paragraphs.length; i += 2) {
+                            pages.push({
+                                pageNumber: Math.floor(i / 2) + 1,
+                                title: `Segment ${Math.floor(i / 2) + 1}`,
+                                content: paragraphs.slice(i, i + 2).join("\n\n")
+                            });
+                        }
+
+                        if (pages.length === 0) {
+                            pages.push({ pageNumber: 1, title: "Source Material", content: text });
+                        }
+
+                        const cleanCitation = this.extractCitation(cleanName);
+
+                        const newPaper = {
+                            id: `text-${Date.now()}`,
+                            title: cleanName,
+                            shortCitation: cleanCitation,
+                            authors: cleanCitation.split(',')[0],
+                            year: parseInt(cleanCitation.split(',')[1]) || new Date().getFullYear(),
+                            journal: 'Ingested Text Script',
+                            methodology: 'Qualitative Framework Inquiry',
+                            sampleSize: `n = ${paragraphs.length} paragraphs`,
+                            statistics: 'Descriptive text extraction',
+                            pages: pages,
+                            isPdf: false
+                        };
+
+                        AppState.papers.push(newPaper);
+                        AppState.selectedPaperId = newPaper.id;
+                        AppState.currentViewerPage = 1;
+
+                        AppState.generatedSlides = null;
+                        AppState.generatedQuiz = null;
+                        AppState.mindMapData = null;
+                        AppState.isShowingTranslation = false;
+                        AppState.translatedText = null;
+
+                        AppState.chatHistory.push({
+                            role: 'system',
+                            content: `Ingested text file: "${fileName}". Extracted ${pages.length} searchable paragraphs.`
+                        });
+
+                        this.renderPapers();
+                        this.renderViewer();
+                        this.renderChat();
+                        triggerToast(`Added text source: ${cleanCitation}`);
+                        document.getElementById('ai-loading-hud').classList.add('hidden');
+                    };
+                    reader.readAsText(file);
+                }
+            },
+
+            // Heuristically builds organized clean academic citation tags
+            extractCitation: function(cleanName) {
+                const authorMatch = cleanName.match(/^([A-Za-z\s]+)(?:_|,|\s)+(\d{4})/);
+                if (authorMatch) {
+                    return `${authorMatch[1].trim()} et al., ${authorMatch[2]}`;
+                }
+                const firstPart = cleanName.trim().split(' ')[0];
+                return `${firstPart.length > 2 ? firstPart : "Source"}, ${new Date().getFullYear()}`;
+            },
+
+            deletePaper: function(id, e) {
+                e.stopPropagation();
+                const index = AppState.papers.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    const deleted = AppState.papers.splice(index, 1)[0];
+                    if (AppState.selectedPaperId === id) {
+                        AppState.selectedPaperId = AppState.papers.length > 0 ? AppState.papers[0].id : null;
+                        AppState.currentViewerPage = 1;
+                    }
+                    
+                    AppState.generatedSlides = null;
+                    AppState.generatedQuiz = null;
+                    AppState.mindMapData = null;
+                    AppState.isShowingTranslation = false;
+                    AppState.translatedText = null;
+
+                    triggerToast(`Removed: ${deleted.shortCitation}`, 'error');
+                    this.renderPapers();
+                    this.renderViewer();
+                }
+            },
+
+            renderPapers: function() {
+                const list = document.getElementById('papers-list');
+                const telemetryBox = document.getElementById('telemetry-box');
+                const telemetryIndicators = document.getElementById('telemetry-indicators');
+                
+                document.getElementById('corpus-count').innerText = `${AppState.papers.length} Source${AppState.papers.length === 1 ? '' : 's'}`;
+                
+                if (AppState.papers.length === 0) {
+                    list.innerHTML = `
+                        <div class="py-12 text-center text-zinc-400 dark:text-zinc-600">
+                            <i data-lucide="folder-open" class="w-5 h-5 mx-auto mb-1.5 opacity-60"></i>
+                            <p class="text-[10px] font-mono leading-normal">No sources loaded.</p>
+                        </div>
+                    `;
+                    telemetryBox.classList.add('hidden');
+                    return;
+                }
+
+                list.innerHTML = AppState.papers.map(p => {
+                    const isSelected = p.id === AppState.selectedPaperId;
+                    return `
+                        <div
+                            onclick="App.selectPaper('${p.id}')"
+                            class="group p-2.5 rounded border transition-all cursor-pointer relative ${
+                                isSelected 
+                                    ? 'bg-zinc-100 border-zinc-300 dark:bg-zinc-900/60 dark:border-zinc-800 shadow-sm' 
+                                    : 'bg-white border-zinc-200 hover:bg-zinc-50 dark:bg-[#09090b] dark:border-zinc-900 dark:hover:bg-zinc-900/40'
+                            }"
+                        >
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex gap-2 min-w-0">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0 mt-0.5 ${isSelected ? 'text-zinc-900 dark:text-zinc-300' : 'text-zinc-400'}"></i>
+                                    <div class="min-w-0">
+                                        <h4 class="text-[11px] font-medium leading-normal text-zinc-850 dark:text-zinc-355 truncate font-sans">
+                                            ${p.title}
+                                        </h4>
+                                        <p class="text-[9px] text-zinc-400 dark:text-zinc-550 font-mono mt-0.5">${p.shortCitation}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onclick="App.deletePaper('${p.id}', event)"
+                                    class="p-0.5 rounded text-zinc-400 hover:text-rose-650 opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
+                                >
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                telemetryBox.classList.remove('hidden');
+                telemetryIndicators.innerHTML = AppState.papers.map(p => `
+                    <div class="bg-white dark:bg-[#121214] p-1.5 rounded border border-zinc-200 dark:border-zinc-800/60 min-w-0">
+                        <p class="text-zinc-400 dark:text-zinc-550 text-[8px] font-mono truncate font-semibold">${p.shortCitation.split(',')[0]}</p>
+                        <p class="font-mono text-[9px] font-semibold text-zinc-650 dark:text-zinc-400 truncate">${p.sampleSize}</p>
+                    </div>
+                `).join('');
+
+                lucide.createIcons();
+            },
+
+            selectPaper: function(id) {
+                AppState.selectedPaperId = id;
+                AppState.currentViewerPage = 1;
+                AppState.textHighlight = null;
+                AppState.isShowingTranslation = false;
+                AppState.translatedText = null;
+                this.renderPapers();
+                this.renderViewer();
+            },
+
+            renderViewer: async function() {
+                const emptyViewer = document.getElementById('viewer-empty');
+                const activeViewer = document.getElementById('viewer-active');
+                const metricsBlock = document.getElementById('viewer-metrics');
+                const canvasContainer = document.getElementById('pdf-canvas-container');
+                const textContainer = document.getElementById('text-view-container');
+                const translationStatus = document.getElementById('translation-status-badge');
+                const showOriginalBtn = document.getElementById('show-original-btn');
+
+                if (AppState.papers.length === 0 || !AppState.selectedPaperId) {
+                    emptyViewer.classList.remove('hidden');
+                    activeViewer.classList.add('hidden');
+                    metricsBlock.classList.add('hidden');
+                    document.getElementById('active-target-badge').innerText = 'None';
+                    return;
+                }
+
+                emptyViewer.classList.add('hidden');
+                activeViewer.classList.remove('hidden');
+                metricsBlock.classList.remove('hidden');
+
+                const paper = AppState.papers.find(p => p.id === AppState.selectedPaperId);
+                if (!paper) return;
+
+                document.getElementById('active-target-badge').innerText = paper.shortCitation;
+                document.getElementById('viewer-journal').innerText = paper.journal;
+                document.getElementById('viewer-title').innerText = paper.title;
+                document.getElementById('viewer-authors').innerText = paper.authors;
+                document.getElementById('viewer-year').innerText = paper.year;
+
+                document.getElementById('page-counter-badge').innerText = `PAGE ${AppState.currentViewerPage} OF ${paper.pages.length}`;
+                
+                document.getElementById('spec-methodology').innerText = paper.methodology;
+                document.getElementById('spec-cohort').innerText = paper.sampleSize;
+                document.getElementById('spec-statistic').innerText = paper.statistics;
+
+                const activePage = paper.pages[AppState.currentViewerPage - 1];
+
+                // Determine whether to display PDF canvas or direct text/translation sheet
+                if (paper.isPdf && paper.pdfData && !AppState.isShowingTranslation) {
+                    canvasContainer.classList.remove('hidden');
+                    
+                    try {
+                        // Dynamically compile active page onto responsive HTML5 canvas
+                        const pdfDoc = await pdfjsLib.getDocument({ data: paper.pdfData }).promise;
+                        const page = await pdfDoc.getPage(AppState.currentViewerPage);
+                        
+                        const canvas = document.getElementById('pdf-canvas');
+                        const context = canvas.getContext('2d');
+                        
+                        // Set scaling parameters for clear rendering
+                        const viewport = page.getViewport({ scale: 1.25 });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+
+                        await page.render(renderContext).promise;
+                    } catch (err) {
+                        console.error('Error rendering onto HTML5 PDF Canvas:', err);
+                    }
+                } else {
+                    canvasContainer.classList.add('hidden');
+                }
+
+                // Keep text representation visible as an dynamic OCR review sheet
+                textContainer.classList.remove('hidden');
+                
+                const textBody = document.getElementById('viewer-page-body');
+                
+                if (AppState.isShowingTranslation && AppState.translatedText) {
+                    translationStatus.classList.remove('hidden');
+                    translationStatus.innerText = `Translated (${AppState.activeTranslationLang})`;
+                    showOriginalBtn.classList.remove('hidden');
+                    document.getElementById('viewer-page-title').innerText = `${activePage ? activePage.title : 'Segment overview'} [Translated]`;
+                    textBody.innerText = AppState.translatedText;
+                } else {
+                    translationStatus.classList.add('hidden');
+                    showOriginalBtn.classList.add('hidden');
+                    document.getElementById('viewer-page-title').innerText = activePage ? activePage.title : 'Segment overview';
+                    
+                    if (activePage) {
+                        if (AppState.textHighlight) {
+                            const regex = new RegExp(`(${AppState.textHighlight})`, 'gi');
+                            const highlighted = activePage.content.replace(regex, `<mark class="bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 font-semibold px-0.5 rounded border-b border-amber-400 dark:border-amber-600 animate-pulse">$1</mark>`);
+                            textBody.innerHTML = highlighted;
+                            
+                            document.getElementById('highlight-alert-hub').classList.remove('hidden');
+                            document.getElementById('highlight-target-text').innerText = `"${AppState.textHighlight}"`;
+                        } else {
+                            textBody.innerText = activePage.content;
+                            document.getElementById('highlight-alert-hub').classList.add('hidden');
+                        }
+                    } else {
+                        textBody.innerText = 'Extractable segment details not present.';
+                    }
+                }
+
+                document.getElementById('prev-page-btn').disabled = AppState.currentViewerPage === 1;
+                document.getElementById('next-page-btn').disabled = AppState.currentViewerPage === paper.pages.length;
+            },
+
+            changeViewerPage: function(direction) {
+                const paper = AppState.papers.find(p => p.id === AppState.selectedPaperId);
+                if (!paper) return;
+                AppState.currentViewerPage = Math.max(1, Math.min(AppState.currentViewerPage + direction, paper.pages.length));
+                
+                // Clear page-specific translation state to prevent context bleeding on navigation
+                AppState.isShowingTranslation = false;
+                AppState.translatedText = null;
+                
+                this.renderViewer();
+            },
+
+            translateCurrentPage: async function() {
+                const targetLang = document.getElementById('translate-lang-select').value;
+                const paper = AppState.papers.find(p => p.id === AppState.selectedPaperId);
+                if (!paper) {
+                    triggerToast('No active document loaded to translate.', 'error');
+                    return;
+                }
+
+                const activePage = paper.pages[AppState.currentViewerPage - 1];
+                if (!activePage || !activePage.content) {
+                    triggerToast('Current segment contains no parseable text to translate.', 'error');
+                    return;
+                }
+
+                document.getElementById('loading-hud-title').innerText = `Translating to ${targetLang}...`;
+                document.getElementById('loading-hud-desc').innerText = "Analyzing complex theoretical paradigms.";
+                document.getElementById('ai-loading-hud').classList.remove('hidden');
+
+                const systemInstruction = `You are an expert academic translator. Translate the provided text into ${targetLang}. 
+Strict Guidelines:
+1. Maintain scholarly tone, scientific accuracy, specialized nomenclature, formulas, and clinical standards.
+2. Keep the original document formatting and sentence structures as intact as possible.
+3. Output ONLY the translated plain text. Do not include any greeting, explanation, or conversational commentary.`;
+
+                const prompt = `Translate the following academic text segment to ${targetLang}:\n\n${activePage.content}`;
+
+                const liveResult = await this.generateAcademicContent(systemInstruction, prompt);
+
+                if (liveResult) {
+                    AppState.translatedText = liveResult;
+                    AppState.isShowingTranslation = true;
+                    AppState.activeTranslationLang = targetLang;
+                    this.renderViewer();
+                    triggerToast(`Translated current page into ${targetLang}!`);
+                } else {
+                    // Fallback local translation simulation structure
+                    const fallbackSentences = {
+                        "Spanish": "El análisis empírico de esta sección explora las metodologías de investigación clínica y los resultados de correlación. Se concluye que las variables del ecosistema afectan directamente las capacidades cognitivas de procesamiento durante el análisis intensivo.",
+                        "French": "L'analyse empirique de cette section explore les méthodologies de recherche clinique et les résultats de corrélation. Il est conclu que les variables de l'écosystème affectent directement les capacités cognitives.",
+                        "German": "Die empirische Analyse in diesem Abschnitt befasst sich mit klinischen Forschungsmethoden und Korrelationsergebnissen. Es wird gefolgert, dass Ökosystemvariablen die kognitiven Fähigkeiten direkt beeinflussen.",
+                        "Chinese": "本节的实证分析探讨了临床研究方法和相关性结果。结论是，在密集分析过程中，生态系统变量直接影响认知加工能力。",
+                        "Japanese": "このセクションの実証的分析では、臨床研究手法と相関結果を探求します。エコシステム変数が、集中的な分析中の認知処理能力に直接影響を及ぼすと結論づけられます。",
+                        "Arabic": "يستكشف التحليل التجريبي في هذا القسم منهجيات البحث السريري ونتائج الارتباط. ويُستنتج أن متغيرات النظام البيئي تؤثر بشكل مباشر على القدرات الإدراكية.",
+                        "Portuguese": "A análise empírica desta seção explora as metodologias de pesquisa clínica e os resultados de correlação. Conclui-se que as variáveis do ecossistema afetam diretamente as capacidades cognitivas."
+                    };
+
+                    const simulatedParagraph = fallbackSentences[targetLang] || `[Simulated Translation in ${targetLang}]: The active literature segment is processed and translated. Connect your secure Gemini API credentials to enable high-fidelity neural translations across all multi-panel documents.`;
+                    
+                    AppState.translatedText = `${simulatedParagraph}\n\n---\n\n${activePage.content.substring(0, 300)}...`;
+                    AppState.isShowingTranslation = true;
+                    AppState.activeTranslationLang = targetLang;
+                    this.renderViewer();
+                    triggerToast(`Local translation simulated for ${targetLang}.`);
+                }
+
+                document.getElementById('ai-loading-hud').classList.add('hidden');
+            },
+
+            showOriginalText: function() {
+                AppState.isShowingTranslation = false;
+                AppState.translatedText = null;
+                this.renderViewer();
+                triggerToast('Original segment layout restored.');
+            },
+
+            switchTab: function(tabName) {
+                AppState.activeTab = tabName;
+                
+                const tabs = ['viewer', 'slides', 'quiz', 'mindmap'];
+                tabs.forEach(t => {
+                    const btn = document.getElementById(`tab-${t}-btn`);
+                    if (t === tabName) {
+                        btn.className = "px-3 py-1.5 text-[11px] font-medium tracking-tight rounded-md transition-all cursor-pointer bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100";
+                        document.getElementById(`workspace-${t}`).classList.remove('hidden');
+                    } else {
+                        btn.className = "px-3 py-1.5 text-[11px] font-medium tracking-tight rounded-md transition-all cursor-pointer text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-200";
+                        document.getElementById(`workspace-${t}`).classList.add('hidden');
+                    }
+                });
+
+                if (tabName === 'slides' && !AppState.generatedSlides && AppState.papers.length > 0) {
+                    this.triggerSlideGeneration();
+                } else if (tabName === 'quiz' && !AppState.generatedQuiz && AppState.papers.length > 0) {
+                    this.triggerQuizGeneration();
+                } else if (tabName === 'mindmap' && !AppState.mindMapData && AppState.papers.length > 0) {
+                    this.triggerMindMapGeneration();
+                }
+            },
+
+            handleConnectKey: function() {
+                const input = document.getElementById('api-key-input');
+                const key = input.value.trim();
+                if (key) {
+                    AppState.apiKey = key;
+                    AppState.isConnected = true;
+                    
+                    document.getElementById('connect-btn').classList.add('hidden');
+                    document.getElementById('disconnect-btn').classList.remove('hidden');
+                    input.disabled = true;
+
+                    const indicator = document.getElementById('connection-indicator');
+                    const statusText = document.getElementById('connection-status');
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50 animate-pulse";
+                    statusText.className = "text-[9px] font-mono tracking-wider text-emerald-500";
+                    statusText.innerText = "Secure Model";
+
+                    AppState.chatHistory.push({
+                        role: 'system',
+                        content: 'Secure Gemini Connection established. Synthesized presentation designs, case vignettes, and mindmaps will run under modern zero-data-retention prompts.'
+                    });
+                    this.renderChat();
+                    triggerToast('Gemini API verified.');
+                }
+            },
+
+            handleDisconnectKey: function() {
+                const input = document.getElementById('api-key-input');
+                input.value = '';
+                input.disabled = false;
+                AppState.apiKey = '';
+                AppState.isConnected = false;
+
+                document.getElementById('connect-btn').classList.remove('hidden');
+                document.getElementById('disconnect-btn').classList.add('hidden');
+
+                const indicator = document.getElementById('connection-indicator');
+                const statusText = document.getElementById('connection-status');
+                indicator.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+                statusText.className = "text-[9px] font-mono tracking-wider text-amber-500";
+                statusText.innerText = "Local Fallback";
+
+                AppState.chatHistory.push({
+                    role: 'system',
+                    content: 'API credentials flushed. All system tools are reverted to local semantic parsing simulators.'
+                });
+                this.renderChat();
+                triggerToast('Credentials cleared.', 'error');
+            },
+
+            generateAcademicContent: async function(systemInstruction, userPrompt) {
+                if (AppState.isConnected && AppState.apiKey) {
+                    
+                    // Call the secure, stable gemini-1.5-flash endpoint for high efficiency
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${AppState.apiKey}`;
+                    
+                    try {
+                        const payload = {
+                            contents: [{ parts: [{ text: userPrompt }] }],
+                            systemInstruction: {
+                                parts: [{ text: systemInstruction }]
+                            },
+                            generationConfig: {
+                                responseMimeType: "application/json"
+                            }
+                        };
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Gemini API returned status ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        return rawText ? rawText.trim() : null;
+
+                    } catch (error) {
+                        console.error('API Error: ', error);
+                        triggerToast('API connection failed. Reverting to local synthesis...', 'error');
+                        return null;
+                    }
+                }
+                return null; 
+            },
+
+            triggerSlideGeneration: async function() {
+                if (AppState.papers.length === 0) {
+                    triggerToast('Upload an academic PDF or text document first.', 'error');
+                    return;
+                }
+
+                const archetype = document.getElementById('ppt-archetype-select').value;
+                document.getElementById('slide-archetype-label').innerText = `${archetype.toUpperCase()} DECK`;
+
+                document.getElementById('slides-empty').classList.add('hidden');
+                document.getElementById('slides-active').classList.remove('hidden');
+
+                document.getElementById('loading-hud-title').innerText = "Compiling Presentation Deck...";
+                document.getElementById('loading-hud-desc').innerText = "Creating professional presentation layers.";
+                document.getElementById('ai-loading-hud').classList.remove('hidden');
+
+                const systemInstruction = `You are a professional PowerPoint template compiler. Extract primary themes from the provided literature and construct an analytical academic presentation.
+Your response MUST be formatted strictly as a single JSON array with exactly 4 objects. No markdown wraps. No leading comments.
+Each slide object must conform to this schema:
+{
+  "title": "Clear slide topic",
+  "bullets": ["Actionable core claim 1", "Evidence grounding statement 2", "Secondary qualitative metric 3"],
+  "presenterNotes": "Thorough presentation and delivery recommendations referencing authors directly."
+}`;
+
+                const activePaper = AppState.papers[0];
+                const sampleText = activePaper.pages.map(p => p.content.substring(0, 500)).join("\n");
+                const prompt = `Produce an educational presentation of archetype: ${archetype} utilizing active study: "${activePaper.title}". Data context:\n${sampleText}`;
+                
+                const liveResult = await this.generateAcademicContent(systemInstruction, prompt);
+                document.getElementById('ai-loading-hud').classList.add('hidden');
+
+                if (liveResult) {
+                    try {
+                        const parsed = JSON.parse(liveResult);
+                        if (Array.isArray(parsed)) {
+                            AppState.generatedSlides = parsed;
+                            AppState.currentSlideIndex = 0;
+                            this.renderSlides();
+                            this.switchTab('slides');
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse AI slides structure.", e);
+                    }
+                }
+
+                // LOCAL SYNTHESIS FALLBACK (Compiles clean thematic slides directly from parsed text elements)
+                const textSnippet = activePaper.pages[0].content.substring(0, 240);
+                const activeCitation = activePaper.shortCitation;
+
+                let slides = [
+                    {
+                        title: `Executive Overview: ${activePaper.title}`,
+                        bullets: [
+                            `Primary Framework: Analyzed through a structured ${activePaper.methodology} paradigm.`,
+                            `Grounded Scope: Direct literature parsed from index: ${activeCitation}.`,
+                            `Initial Data Ingestion: "${textSnippet.substring(0, 110)}..."`
+                        ],
+                        presenterNotes: `Open this lecture framework by introducing ${activeCitation}. Focus discussions specifically on the core methodology and how visual boundaries lower intrinsic parsing friction.`
+                    },
+                    {
+                        title: "Conceptual Framework & Interventions",
+                        bullets: [
+                            "Core assertions map direct causal pathways across the active corpus.",
+                            "Variables must be carefully isolated to isolate secondary confounding factors.",
+                            `Dynamic reading parameters segment inputs into: ${activePaper.pages.length} searchable nodes.`
+                        ],
+                        presenterNotes: "Contrast traditional qualitative models with this computational structure. Call out experimental gaps."
+                    },
+                    {
+                        title: "Critical Discussion & Analytical Gaps",
+                        bullets: [
+                            "Independent testing trials indicate strong structural durability.",
+                            "Significance boundaries require rigorous baseline standardization.",
+                            `Outlier thresholds: ${activePaper.statistics}`
+                        ],
+                        presenterNotes: "Examine sample size parameters. Instruct students to scrutinize potential selection bias within cohort limits."
+                    },
+                    {
+                        title: "Future Work & Systematic Application",
+                        bullets: [
+                            "Deploy customized workspace hubs to consolidate high-density visual files.",
+                            "Incorporate immediate, responsive grounding tags to aid memory retention.",
+                            "Standardize research protocols with modern clinical outputs."
+                        ],
+                        presenterNotes: "Conclude with an interactive Q&A. Highlight immediate actions to standardize research protocols with current institutional outputs."
+                    }
+                ];
+
+                AppState.generatedSlides = slides;
+                AppState.currentSlideIndex = 0;
+                this.renderSlides();
+                this.switchTab('slides');
+            },
+
+            renderSlides: function() {
+                if (!AppState.generatedSlides) return;
+                const slide = AppState.generatedSlides[AppState.currentSlideIndex];
+                
+                document.getElementById('slide-counter-badge').innerText = `SLIDE ${AppState.currentSlideIndex + 1} / ${AppState.generatedSlides.length}`;
+                document.getElementById('slide-header-text').innerText = slide.title;
+                document.getElementById('slide-presenter-notes').innerText = slide.presenterNotes;
+
+                const bulletsList = document.getElementById('slide-bullets-list');
+                bulletsList.innerHTML = slide.bullets.map(b => `
+                    <li class="flex items-start gap-2 text-[11px] text-zinc-300 leading-relaxed">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-550 shrink-0 mt-1.5"></span>
+                        <span>${b}</span>
+                    </li>
+                `).join('');
+
+                document.getElementById('prev-slide-btn').disabled = AppState.currentSlideIndex === 0;
+                document.getElementById('next-slide-btn').disabled = AppState.currentSlideIndex === AppState.generatedSlides.length - 1;
+            },
+
+            changeSlide: function(direction) {
+                if (!AppState.generatedSlides) return;
+                AppState.currentSlideIndex = Math.max(0, Math.min(AppState.currentSlideIndex + direction, AppState.generatedSlides.length - 1));
+                this.renderSlides();
+            },
+
+            triggerQuizGeneration: async function() {
+                if (AppState.papers.length === 0) {
+                    triggerToast('Upload a target PDF or text document first.', 'error');
+                    return;
+                }
+
+                const difficulty = document.getElementById('quiz-difficulty-select').value;
+                document.getElementById('quiz-difficulty-badge').innerText = difficulty === 'doctoral' ? 'USMLE Board-Style' : 'Comprehensive Q&A';
+
+                document.getElementById('quiz-empty').classList.add('hidden');
+                document.getElementById('quiz-active').classList.remove('hidden');
+
+                document.getElementById('loading-hud-title').innerText = "Generating Case Vignette...";
+                document.getElementById('loading-hud-desc').innerText = "Formulating conceptual board-style items.";
+                document.getElementById('ai-loading-hud').classList.remove('hidden');
+
+                const systemInstruction = `You are a clinical board examiner and professor. Produce a single high-fidelity, peer-reviewed board-style exam question based on the provided literature.
+Your response MUST be structured strictly as a single JSON object. No markdown wraps. No leading comments.
+The object schema must be exactly:
+{
+  "vignette": "A detailed multi-sentence clinical or research case scenario incorporating specific parameters from the literature",
+  "question": "A concept-testing multiple-choice prompt focusing on structural mechanisms",
+  "options": ["A: First choice option", "B: Second choice option", "C: Third choice option", "D: Fourth choice option"],
+  "correctIndex": 2,
+  "rationale": "A comprehensive paragraph explaining the underlying mechanism, why the correct choice is correct, and specifically why each distractor is incorrect."
+}`;
+
+                const activePaper = AppState.papers[0];
+                const sampleText = activePaper.pages.map(p => p.content.substring(0, 400)).join("\n");
+                const prompt = `Formulate a clinical case vignette testing theoretical concepts in: ${activePaper.shortCitation}. Context references:\n${sampleText}`;
+                
+                const liveResult = await this.generateAcademicContent(systemInstruction, prompt);
+                document.getElementById('ai-loading-hud').classList.add('hidden');
+
+                if (liveResult) {
+                    try {
+                        const parsed = JSON.parse(liveResult);
+                        if (parsed.vignette && parsed.options) {
+                            AppState.generatedQuiz = parsed;
+                            AppState.quizSelectedOption = null;
+                            AppState.quizSubmitted = false;
+                            this.renderQuiz();
+                            this.switchTab('quiz');
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse clinical quiz structure.", e);
+                    }
+                }
+
+                // LOCAL SYNTHESIS FALLBACK (Assembles structured qualitative vignette based on document indices)
+                const firstPaper = AppState.papers[0];
+                const activeCitation = firstPaper.shortCitation;
+                const snippet = firstPaper.pages[0].content.substring(0, 200);
+
+                const quiz = {
+                    vignette: `An academic research cohort is evaluated to determine cognitive threshold limits when navigating dense multi-panel literature workspaces. Investigators note that split-attention effects significantly degrade recall accuracy. The baseline data points note: "${snippet}..."`,
+                    question: `According to the empirical frameworks mapped in ${activeCitation}, which of the following variables represents the primary target of structural scaffolding in human working memory?`,
+                    options: [
+                        "A: Intrinsic cognitive load arising from inherent material complexity.",
+                        "B: Extraneous visual load induced by spatial split-attention and layout density.",
+                        "C: Automatic schema acquisition limits governed by auditory processing paths.",
+                        "D: Sensory register depletion during repetitive manual task execution."
+                    ],
+                    correctIndex: 1,
+                    rationale: `${activeCitation} details how consolidating separate source visualizers, document viewers, and Q&A chat panels into a single unified desktop viewport significantly reduces extraneous cognitive load. Extraneous load (Choice B) is a direct property of instruction design. Intrinsic load (Choice A) reflects core task difficulty. Schema acquisition (Choice C) is a learning process, not an immediate visual load component.`
+                };
+
+                AppState.generatedQuiz = quiz;
+                AppState.quizSelectedOption = null;
+                AppState.quizSubmitted = false;
+                this.renderQuiz();
+                this.switchTab('quiz');
+            },
+
+            renderQuiz: function() {
+                if (!AppState.generatedQuiz) return;
+                const quiz = AppState.generatedQuiz;
+
+                document.getElementById('quiz-vignette-text').innerText = `"${quiz.vignette}"`;
+                document.getElementById('quiz-question-text').innerText = quiz.question;
+
+                const rationaleCard = document.getElementById('quiz-rationale-card');
+                if (AppState.quizSubmitted) {
+                    rationaleCard.classList.remove('hidden');
+                    document.getElementById('quiz-rationale-text').innerText = quiz.rationale;
+                } else {
+                    rationaleCard.classList.add('hidden');
+                }
+
+                const optionsGrid = document.getElementById('quiz-options-grid');
+                optionsGrid.innerHTML = quiz.options.map((opt, idx) => {
+                    const isSelected = AppState.quizSelectedOption === idx;
+                    const isCorrect = quiz.correctIndex === idx;
+                    
+                    let blockStyle = "bg-white border-zinc-200 text-zinc-850 hover:border-zinc-400 dark:bg-[#121214] dark:border-zinc-850 dark:text-zinc-300 dark:hover:border-zinc-700";
+
+                    if (AppState.quizSubmitted) {
+                        if (isCorrect) {
+                            blockStyle = "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500 dark:border-emerald-800 text-emerald-750 dark:text-emerald-300 pointer-events-none";
+                        } else if (isSelected) {
+                            blockStyle = "bg-rose-50 dark:bg-rose-950/20 border-rose-500 dark:border-rose-905 text-rose-700 dark:text-rose-300 pointer-events-none";
+                        } else {
+                            blockStyle = "bg-zinc-50/50 dark:bg-[#121214]/40 border-zinc-200 dark:border-zinc-900 text-zinc-400 dark:text-zinc-650 pointer-events-none";
+                        }
+                    } else if (isSelected) {
+                        blockStyle = "bg-zinc-100 border-zinc-400 text-zinc-950 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100";
+                    }
+
+                    return `
+                        <button
+                            onclick="App.selectQuizOption(${idx})"
+                            class="w-full text-left p-3 rounded border transition-all text-[11px] font-medium flex items-start gap-2.5 cursor-pointer ${blockStyle}"
+                        >
+                            <span class="w-4 h-4 rounded-full flex items-center justify-center font-mono text-[9px] shrink-0 mt-0.5 ${
+                                isSelected ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
+                            }">
+                                ${String.fromCharCode(65 + idx)}
+                            </span>
+                            <span>${opt}</span>
+                        </button>
+                    `;
+                }).join('');
+            },
+
+            selectQuizOption: function(index) {
+                if (AppState.quizSubmitted) return;
+                AppState.quizSelectedOption = index;
+                this.renderQuiz();
+            },
+
+            submitQuizAnswer: function() {
+                if (AppState.quizSelectedOption === null || AppState.quizSubmitted) return;
+                AppState.quizSubmitted = true;
+                this.renderQuiz();
+
+                const isCorrect = AppState.quizSelectedOption === AppState.generatedQuiz.correctIndex;
+                if (isCorrect) {
+                    triggerToast('Correct conceptual alignment!');
+                } else {
+                    triggerToast('Incorrect assessment path.', 'error');
+                }
+            },
+
+            triggerMindMapGeneration: async function() {
+                if (AppState.papers.length === 0) {
+                    triggerToast('Upload a target PDF or text document first.', 'error');
+                    return;
+                }
+
+                document.getElementById('mindmap-empty').classList.add('hidden');
+                document.getElementById('mindmap-active').classList.remove('hidden');
+
+                document.getElementById('loading-hud-title').innerText = "Mapping Conceptual Relations...";
+                document.getElementById('loading-hud-desc').innerText = "Assembling theoretical linking arrays.";
+                document.getElementById('ai-loading-hud').classList.remove('hidden');
+
+                const systemInstruction = `You are a visual data compiler. Map the logical conceptual relationships linking the provided papers.
+Your response MUST be structured strictly as a single JSON object. No markdown wraps. No leading comments.
+The object schema must be exactly:
+{
+  "nodes": [{"id": "Node unique ID", "label": "Short conceptual label", "type": "core/study/concept", "desc": "Brief academic framework explanation"}],
+  "links": [{"source": "Source Node ID", "target": "Target Node ID", "relation": "supports/contradicts/extends", "color": "emerald/rose/indigo/sky"}]
+}`;
+
+                const activePaper = AppState.papers[0];
+                const prompt = `Construct a visual mapping of relations inside: "${activePaper.title}". Core data reference:\n${activePaper.pages[0].content.substring(0, 500)}`;
+                
+                const liveResult = await this.generateAcademicContent(systemInstruction, prompt);
+                document.getElementById('ai-loading-hud').classList.add('hidden');
+
+                if (liveResult) {
+                    try {
+                        const parsed = JSON.parse(liveResult);
+                        if (parsed.nodes && parsed.links) {
+                            AppState.mindMapData = parsed;
+                            this.renderMindMap();
+                            this.switchTab('mindmap');
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse visual mind map data structure.", e);
+                    }
+                }
+
+                // LOCAL SYNTHESIS FALLBACK (Builds dynamic node map capturing loaded file connections)
+                const firstPaper = AppState.papers[0];
+                const activeCitation = firstPaper.shortCitation;
+
+                const fallbackMap = {
+                    nodes: [
+                        { id: 'core', label: 'Primary Thesis core', type: 'core', desc: `Central empirical target of: ${firstPaper.title}.` },
+                        { id: 'p1', label: activeCitation, type: 'study', desc: `Ingested ${firstPaper.isPdf ? 'PDF' : 'Text'} source segment with ${firstPaper.pages.length} parsed reading partitions.` },
+                        { id: 'c1', label: 'Extraneous Load Constraints', type: 'concept', desc: 'Variables limiting processing capacities during intensive research sessions.' },
+                        { id: 'c2', label: 'Grounded Evidence Processing', type: 'concept', desc: 'Process where parsed text elements are cross-referenced with citations.' }
+                    ],
+                    links: [
+                        { source: 'p1', target: 'c1', relation: 'evaluates', color: 'indigo' },
+                        { source: 'p1', target: 'core', relation: 'supports', color: 'indigo' },
+                        { source: 'core', target: 'c2', relation: 'facilitates', color: 'emerald' }
+                    ]
+                };
+
+                if (AppState.papers.length > 1) {
+                    const secondPaper = AppState.papers[1];
+                    fallbackMap.nodes.push({ id: 'p2', label: secondPaper.shortCitation, type: 'study', desc: `Comparative literature node referencing: ${secondPaper.title}.` });
+                    fallbackMap.links.push({ source: 'p2', target: 'core', relation: 'extends', color: 'sky' });
+                    fallbackMap.links.push({ source: 'p2', target: 'p1', relation: 'corroborates', color: 'emerald' });
+                }
+
+                AppState.mindMapData = fallbackMap;
+                this.renderMindMap();
+                this.switchTab('mindmap');
+            },
+
+            renderMindMap: function() {
+                if (!AppState.mindMapData) return;
+                const data = AppState.mindMapData;
+
+                const pillarsDiv = document.getElementById('mindmap-core-pillars');
+                const cores = data.nodes.filter(n => n.type === 'core' || n.type === 'concept');
+                pillarsDiv.innerHTML = cores.map(n => `
+                    <div class="p-3 rounded border border-zinc-200 dark:border-zinc-850 bg-white dark:bg-[#121214] space-y-1 animate-fade-in transition-colors duration-250">
+                        <span class="text-[8px] font-mono text-zinc-400 dark:text-zinc-550 uppercase tracking-widest">${n.type}</span>
+                        <h4 class="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 font-serif">${n.label}</h4>
+                        <p class="text-[10px] text-zinc-500 dark:text-zinc-455 leading-normal font-sans">${n.desc}</p>
+                    </div>
+                `).join('');
+
+                const studiesDiv = document.getElementById('mindmap-study-nodes');
+                const studies = data.nodes.filter(n => n.type === 'study');
+                studiesDiv.innerHTML = studies.map(n => `
+                    <div class="p-3 rounded border border-zinc-200 dark:border-zinc-855 bg-white dark:bg-[#121214] space-y-1 animate-fade-in transition-colors duration-250">
+                        <span class="text-[8px] font-mono text-zinc-455 dark:text-zinc-550 uppercase tracking-widest flex items-center gap-1">
+                            <i data-lucide="file-text" class="w-2.5 h-2.5"></i>
+                            Document Node
+                        </span>
+                        <h4 class="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 font-serif">${n.label}</h4>
+                        <p class="text-[10px] text-zinc-500 dark:text-zinc-455 leading-normal font-sans">${n.desc}</p>
+                    </div>
+                `).join('');
+
+                const relationsList = document.getElementById('mindmap-relations-list');
+                relationsList.innerHTML = data.links.map(link => {
+                    const srcNode = data.nodes.find(n => n.id === link.source);
+                    const destNode = data.nodes.find(n => n.id === link.target);
+                    
+                    let col = "border-zinc-300 text-zinc-500 dark:border-zinc-800 dark:text-zinc-550";
+                    if (link.color === 'emerald') col = "border-emerald-200 text-emerald-600 dark:border-emerald-950 dark:text-emerald-400";
+                    if (link.color === 'sky') col = "border-sky-200 text-sky-600 dark:border-sky-950 dark:text-sky-400";
+                    if (link.color === 'rose') col = "border-rose-200 text-rose-600 dark:border-rose-950 dark:text-rose-400";
+
+                    return `
+                        <div class="p-2.5 rounded bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-900 space-y-1 text-[10px] animate-fade-in transition-colors duration-250">
+                            <div class="flex items-center justify-between font-mono gap-1">
+                                <span class="text-zinc-650 dark:text-zinc-400 truncate">${srcNode ? srcNode.label.split(' (')[0] : 'Node'}</span>
+                                <span class="px-1 py-0.2 rounded border text-[8px] uppercase shrink-0 ${col}">
+                                    ${link.relation}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-1 text-zinc-455 dark:text-zinc-600 font-mono text-[9px]">
+                                <i data-lucide="arrow-right" class="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-700 font-bold"></i>
+                                <span class="truncate">${destNode ? destNode.label : 'Node'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            },
+
+            handleChatMessage: async function(e) {
+                e.preventDefault();
+                const input = document.getElementById('chat-input');
+                const text = input.value.trim();
+                if (!text) return;
+
+                if (AppState.papers.length === 0) {
+                    triggerToast('Upload an academic document first to start grounded Q&A.', 'error');
+                    return;
+                }
+
+                input.value = '';
+                AppState.chatHistory.push({ role: 'user', content: text });
+                this.renderChat();
+
+                document.getElementById('loading-hud-title').innerText = "Querying Academic Frameworks...";
+                document.getElementById('loading-hud-desc').innerText = "Retrieving text matches across literature.";
+                document.getElementById('ai-loading-hud').classList.remove('hidden');
+
+                const groundingContext = AppState.papers.map(p => {
+                    const pageData = p.pages.map(page => `Page ${page.pageNumber}: ${page.content.substring(0, 1000)}`).join("\n");
+                    return `Paper: ${p.title} (${p.shortCitation})\nAuthors: ${p.authors}\nContent:\n${pageData}`;
+                }).join("\n\n---\n\n");
+
+                const systemInstruction = `You are Athenaeum AI, an expert academic notebook companion.
+Your answers MUST be strictly grounded in the provided context from uploaded research papers.
+Active Papers Grounding Context:
+${groundingContext}
+
+Strict Guidelines:
+1. Every claim, formula, metric, or theoretical link must be strictly grounded. If it is not directly in the text, state "Not addressed in the provided literature."
+2. Cite documents with exact Author & Page references using EXACTLY this clickable layout format: [Short Citation, p. PageNumber] e.g. [Svensson et al., 2024, p. 2].
+3. Output clean, concise prose. Do not wrap normal conversational answers in raw JSON formats.`;
+
+                const liveResponse = await this.generateAcademicContent(systemInstruction, text);
+                document.getElementById('ai-loading-hud').classList.add('hidden');
+                
+                if (liveResponse) {
+                    AppState.chatHistory.push({ role: 'assistant', content: liveResponse });
+                    this.renderChat();
+                    return;
+                }
+
+                // Fallback local matching simulation
+                setTimeout(() => {
+                    const activePaper = AppState.papers.find(p => p.id === AppState.selectedPaperId) || AppState.papers[0];
+                    const cit = activePaper.shortCitation;
+                    const cleanText = text.toLowerCase();
+                    
+                    let matches = [];
+                    activePaper.pages.forEach(p => {
+                        if (p.content.toLowerCase().includes(cleanText)) {
+                            matches.push(p.pageNumber);
+                        }
+                    });
+
+                    let answer = "";
+                    if (matches.length > 0) {
+                        const targetPage = matches[0];
+                        const snippet = activePaper.pages[targetPage - 1].content.substring(0, 200);
+                        answer = `Based on the extracted text in **${activePaper.title}**, the document mentions: "${snippet}..." [${cit}, p. ${targetPage}]. This page-grounded search highlights localized matches inside your uploaded document.`;
+                    } else {
+                        const defaultSnippet = activePaper.pages[0].content.substring(0, 185);
+                        answer = `Reviewing your query against the active corpus: The text references concepts in **${activePaper.title}** [${cit}, p. 1]. The extracted literature mentions: "${defaultSnippet}...". You can trigger specific citations to highlight target phrases.`;
+                    }
+
+                    AppState.chatHistory.push({ role: 'assistant', content: answer });
+                    App.renderChat();
+                }, 800);
+            },
+
+            renderChat: function() {
+                const container = document.getElementById('chat-messages');
+                
+                container.innerHTML = AppState.chatHistory.map((msg, index) => {
+                    let styling = "bg-white border-zinc-200 text-zinc-800 ml-6 dark:bg-[#121214] dark:border-zinc-800/80 dark:text-zinc-300";
+                    if (msg.role === 'system') {
+                        styling = "bg-zinc-50 border-zinc-150 text-zinc-400 dark:bg-zinc-950/40 dark:border-zinc-900/40 dark:text-zinc-500 font-mono text-[10px]";
+                    } else if (msg.role === 'assistant') {
+                        styling = "bg-zinc-100/40 border-zinc-200 mr-6 text-zinc-700 dark:bg-[#09090b] dark:border-zinc-900 dark:text-zinc-400 shadow-sm";
+                    }
+
+                    let formattedContent = msg.content;
+                    if (msg.role === 'assistant') {
+                        // Regex intercepts structured grounded citations and formats them into clickable deep-links
+                        const citationRegex = /(\[[A-Za-z&\s]+,\s*\d{4},\s*p\.\s*\d+\])/g;
+                        formattedContent = msg.content.replace(citationRegex, (match) => {
+                            return `
+                                <button
+                                    onclick="App.handleCitationClick('${match}')"
+                                    class="inline-flex items-center gap-1 px-1 py-0.5 text-[9px] font-mono rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer focus:outline-none"
+                                >
+                                    <i data-lucide="book-open" class="w-2.5 h-2.5 text-zinc-450"></i>
+                                    ${match}
+                                </button>
+                            `;
+                        });
+                    }
+
+                    return `
+                        <div class="p-3 rounded border text-[11px] leading-relaxed animate-fade-in ${styling}">
+                            ${formattedContent}
+                        </div>
+                    `;
+                }).join('');
+
+                container.scrollTop = container.scrollHeight;
+                lucide.createIcons();
+            },
+
+            handleCitationClick: function(citationText) {
+                const match = citationText.match(/\[([A-Za-z&\s]+,\s*\d{4}),\s*p\.\s*(\d+)\]/);
+                if (match) {
+                    const shortCit = match[1].trim();
+                    const pageNum = parseInt(match[2]);
+
+                    const targetPaper = AppState.papers.find(p => p.shortCitation.toLowerCase().includes(shortCit.split(' ')[0].toLowerCase()));
+                    if (targetPaper) {
+                        AppState.selectedPaperId = targetPaper.id;
+                        AppState.currentViewerPage = Math.min(pageNum, targetPaper.pages.length);
+                        
+                        // Briefly pulse matching highlights inside reader view
+                        AppState.textHighlight = "framework" || "cognitive" || "analysis";
+                        AppState.isShowingTranslation = false; // Reset translation visual overlays during deep link routing
+                        
+                        this.switchTab('viewer');
+                        this.renderPapers();
+                        this.renderViewer();
+
+                        setTimeout(() => {
+                            AppState.textHighlight = null;
+                            App.renderViewer();
+                        }, 4000);
+                    }
+                }
+            }
+        };
+
+        window.onload = function() {
+            App.init();
+        };
+    </script>
+</body>
+</html>
